@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIMS - Advisor Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="header">
+    <div class="header-content">
+        <div class="header-left">
+            <svg class="header-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <div>
+                <h1>AIMS</h1>
+                <p class="subtitle">Academic Information Management System</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="user-info">
+                <p class="user-name"><%= user.name %></p>
+                <p class="user-role"><%= user.user_id %> (Advisor)</p>
+            </div>
+            <button onclick="logout()" class="btn-logout">Logout</button>
+        </div>
+    </div>
+</header>
+
+<main class="main-content">
+    <h2>Pending Enrollment Approvals</h2>
+    <div class="table-card">
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Student ID</th>
+                    <th>Dept</th>
+                    <th>Course</th>
+                    <th>Instructor Status</th>
+                    <th>Advisor Status</th>
+                    <th>Comment</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody id="advisorEnrollmentsTable">
+                <tr><td colspan="8" class="text-center">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script src="/js/advisor.js"></script>
+</body>
+</html>
