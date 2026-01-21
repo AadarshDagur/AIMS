@@ -94,50 +94,115 @@ async function enroll(courseId) {
   }
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return 'N/A';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+// --- NEW: client-side status filter helper ---
+function passesStatusFilter(enrollment) {
+  const select = document.getElementById('statusFilter'); // <select> in My Enrollments
+  if (!select) return true;
+  const filter = select.value; // 'all' | 'pending' | 'approved' | 'rejected'
+
+  const finalStatus =
+    enrollment.instructor_status === 'approved' && enrollment.advisor_status === 'approved'
+      ? 'approved'
+      : enrollment.instructor_status === 'rejected' || enrollment.advisor_status === 'rejected'
+      ? 'rejected'
+      : 'pending';
+
+  if (filter === 'all') return true;
+  return finalStatus === filter;
+}
+
+// --- NEW: drop course ---
+async function dropEnrollment(enrollmentId) {
+  if (!confirm('Are you sure you want to drop this course?')) return;
+  try {
+    const res = await fetch(`/api/enrollments/drop/${enrollmentId}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || 'Failed to drop course');
+      return;
+    }
+    alert('Course dropped successfully');
+    loadEnrollments();
+  } catch (e) {
+    alert('Server error');
+  }
+}
+
 async function loadEnrollments() {
   const tbody = document.getElementById('enrollmentsTable');
-  tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
   try {
     const res = await fetch('/api/enrollments/student');
     const rows = await res.json();
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center">No enrollments yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center">No enrollments yet</td></tr>';
       return;
     }
+
     tbody.innerHTML = '';
-    rows.forEach(e => {
-      const finalStatus =
-        e.instructor_status === 'approved' && e.advisor_status === 'approved'
-          ? 'approved'
-          : e.instructor_status === 'rejected' || e.advisor_status === 'rejected'
-          ? 'rejected'
-          : 'pending';
+    rows
+      .filter(passesStatusFilter)   // apply status filter
+      .forEach(e => {
+        const finalStatus =
+          e.instructor_status === 'approved' && e.advisor_status === 'approved'
+            ? 'approved'
+            : e.instructor_status === 'rejected' || e.advisor_status === 'rejected'
+            ? 'rejected'
+            : 'pending';
 
-      const badgeClass =
-        finalStatus === 'approved'
-          ? 'badge-approved'
-          : finalStatus === 'rejected'
-          ? 'badge-rejected'
-          : 'badge-pending';
+        const badgeClass =
+          finalStatus === 'approved'
+            ? 'badge-approved'
+            : finalStatus === 'rejected'
+            ? 'badge-rejected'
+            : 'badge-pending';
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${e.course_code}</td>
-        <td>${e.course_title}</td>
-        <td>${e.enrolled_date}</td>
-        <td><span class="badge badge-${e.instructor_status}">${e.instructor_status}</span></td>
-        <td><span class="badge badge-${e.advisor_status}">${e.advisor_status}</span></td>
-        <td><span class="badge ${badgeClass}">${finalStatus}</span></td>
-      `;
-      tbody.appendChild(tr);
-    });
+        const canDrop = finalStatus !== 'rejected'; // or whatever rule you want
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${e.course_code}</td>
+          <td>${e.course_title}</td>
+          <td>${formatDate(e.enrolled_date)}</td>
+          <td><span class="badge badge-${e.instructor_status}">${e.instructor_status}</span></td>
+          <td><span class="badge badge-${e.advisor_status}">${e.advisor_status}</span></td>
+          <td><span class="badge ${badgeClass}">${finalStatus}</span></td>
+          <td>
+            ${
+              canDrop
+                ? `<button class="btn-small reject" onclick="dropEnrollment(${e.id})">Drop</button>`
+                : '-'
+            }
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Failed to load enrollments</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Failed to load enrollments</td></tr>';
   }
 }
 
 function searchCourses() {
   renderCourses();
+}
+
+// called by Status dropdown “Search” button
+function applyEnrollmentFilter() {
+  loadEnrollments();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

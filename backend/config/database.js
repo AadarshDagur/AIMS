@@ -53,6 +53,22 @@ const initDatabase = async () => {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS advisor_students (
+        id SERIAL PRIMARY KEY,
+        student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        advisor_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        assigned_date DATE DEFAULT CURRENT_DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(student_id, advisor_id)
+      );
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_advisor_students_advisor ON advisor_students(advisor_id);
+    `);
+
+
     console.log('Database tables created successfully');
   } catch (error) {
     console.error('Error initializing database:', error);

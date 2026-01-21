@@ -33,6 +33,22 @@
 <main class="main-content">
     <h2>Pending Enrollment Approvals</h2>
 
+    <!-- Add after <h2>Pending Enrollment Approvals</h2> -->
+    <div class="table-card">
+    <h3>My Assigned Students (12)</h3>
+    <div class="table-container">
+        <table>
+        <thead>
+            <tr><th>Student ID</th><th>Name</th><th>Assigned Date</th></tr>
+        </thead>
+        <tbody id="assignedStudentsTable">
+            <tr><td colspan="3" class="text-center">Loading...</td></tr>
+        </tbody>
+        </table>
+    </div>
+    </div>
+
+
     <div class="table-card">
         <div class="table-container">
             <table>
@@ -42,9 +58,7 @@
                     <th>Student ID</th>
                     <th>Department</th>
                     <th>Course</th>
-                    <th>Instructor Status</th>
                     <th>Advisor Status</th>
-                    <th>Comment</th>
                     <th>Action</th>
                 </tr>
                 </thead>

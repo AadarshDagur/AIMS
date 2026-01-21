@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIMS - Advisor Dashboard</title>
+    <title>AIMS - Instructor Dashboard</title>  <!-- FIXED -->
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -23,7 +23,7 @@
         <div class="header-right">
             <div class="user-info">
                 <p class="user-name"><%= user.name %></p>
-                <p class="user-role"><%= user.user_id %> (Advisor)</p>
+                <p class="user-role"><%= user.user_id %> (Instructor)</p>  <!-- FIXED -->
             </div>
             <button onclick="logout()" class="btn-logout">Logout</button>
         </div>
@@ -31,30 +31,91 @@
 </header>
 
 <main class="main-content">
-    <h2>Pending Enrollment Approvals</h2>
-    <div class="table-card">
-        <div class="table-container">
-            <table>
-                <thead>
-                <tr>
-                    <th>Student Name</th>
-                    <th>Student ID</th>
-                    <th>Dept</th>
-                    <th>Course</th>
-                    <th>Instructor Status</th>
-                    <th>Advisor Status</th>
-                    <th>Comment</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody id="advisorEnrollmentsTable">
-                <tr><td colspan="8" class="text-center">Loading...</td></tr>
-                </tbody>
-            </table>
+    <div class="nav-tabs">
+        <button class="tab-button active" onclick="showTab('myCourses')">My Courses</button>
+        <button class="tab-button" onclick="showTab('approvals')">Enrollment Requests</button>
+    </div>
+
+    <!-- My Courses Tab -->
+    <div id="myCoursesTab" class="tab-content active">
+        <h2>My Offered Courses</h2>
+
+        <div class="card">
+            <h3>Create New Course</h3>
+            <form id="createCourseForm" class="form-grid">
+                <div class="form-group">
+                    <label>Code</label>
+                    <input type="text" id="courseCode" name="code" required placeholder="e.g. CS301">
+                </div>
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="courseTitle" name="title" required placeholder="Course title">
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <input type="text" id="courseDept" name="department" required placeholder="e.g. CSE">
+                </div>
+                <div class="form-group">
+                    <label>Credits</label>
+                    <input type="number" id="courseCredits" name="credits" min="1" max="20" required>
+                </div>
+                <div class="form-group">
+                    <label>Session</label>
+                    <input type="text" id="courseSession" name="session" required placeholder="2025-26 Sem II">
+                </div>
+                <div class="form-group full-width">
+                    <button type="submit" class="btn-primary">Create Course</button>
+                    <span id="createCourseMessage"></span>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-card">
+            <h3>Your Courses</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Title</th>
+                        <th>Department</th>
+                        <th>Credits</th>
+                        <th>Session</th>
+                    </tr>
+                    </thead>
+                    <tbody id="instructorCoursesTable">
+                    <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enrollment Requests Tab -->
+    <div id="approvalsTab" class="tab-content">
+        <h2>Enrollment Requests</h2>
+        <div class="table-card">
+            <div class="table-container">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Student ID</th>
+                        <th>Course</th>
+                        <th>Requested</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody id="instructorEnrollmentsTable">
+                    <tr><td colspan="7" class="text-center">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </main>
 
-<script src="/js/advisor.js"></script>
+<script src="/js/instructor.js"></script>  <!-- FIXED -->
 </body>
 </html>

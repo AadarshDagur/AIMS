@@ -10,6 +10,8 @@ async function logout() {
   }
 }
 
+
+
 async function loadAdvisorEnrollments() {
   const tbody = document.getElementById('advisorEnrollmentsTable');
   tbody.innerHTML = '<tr><td colspan="8" class="text-center">Loading...</td></tr>';
@@ -28,11 +30,7 @@ async function loadAdvisorEnrollments() {
         <td>${e.student_user_id}</td>
         <td>${e.department}</td>
         <td>${e.course_code} - ${e.course_title}</td>
-        <td><span class="badge badge-${e.instructor_status}">${e.instructor_status}</span></td>
         <td><span class="badge badge-${e.advisor_status}">${e.advisor_status}</span></td>
-        <td>
-          <input type="text" placeholder="Comment" data-comment-for="${e.id}" />
-        </td>
         <td>
           <button class="btn-small approve" onclick="updateAdvisorEnrollment(${e.id}, 'approved')">Approve</button>
           <button class="btn-small reject" onclick="updateAdvisorEnrollment(${e.id}, 'rejected')">Reject</button>
@@ -65,6 +63,26 @@ async function updateAdvisorEnrollment(id, status) {
   }
 }
 
+
+async function loadAssignedStudents() {
+    const tbody = document.getElementById('assignedStudentsTable');
+    tbody.innerHTML = '<tr><td colspan="3" class="text-center">Loading...</td></tr>';
+    try {
+        const res = await fetch('/api/enrollments/advisor/pending');
+        const rows = await res.json();
+        // Show student count in header
+        document.querySelector('h3').textContent = `My Assigned Students (${rows.length})`;
+        
+        // For now, just show count until you add dedicated endpoint
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center">Feature coming soon</td></tr>';
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center">Error loading</td></tr>';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  loadAdvisorEnrollments();
+    loadAdvisorEnrollments();
+    loadAssignedStudents(); // Add this
 });
+
+

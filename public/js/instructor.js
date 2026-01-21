@@ -53,6 +53,18 @@ async function loadMyCourses() {
   }
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return 'N/A';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-IN', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 async function loadInstructorEnrollments() {
   const tbody = document.getElementById('instructorEnrollmentsTable');
   tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
@@ -70,11 +82,8 @@ async function loadInstructorEnrollments() {
         <td>${e.student_name}</td>
         <td>${e.student_user_id}</td>
         <td>${e.course_code} - ${e.course_title}</td>
-        <td>${e.enrolled_date}</td>
+        <td>${formatDate(e.enrolled_date)}</td>
         <td><span class="badge badge-${e.instructor_status}">${e.instructor_status}</span></td>
-        <td>
-          <input type="text" placeholder="Comment" data-comment-for="${e.id}" />
-        </td>
         <td>
           <button class="btn-small approve" onclick="updateEnrollment(${e.id}, 'approved')">Approve</button>
           <button class="btn-small reject" onclick="updateEnrollment(${e.id}, 'rejected')">Reject</button>

@@ -44,6 +44,31 @@ router.post('/enroll', roleMiddleware(['student']), async (req, res) => {
   }
 });
 
+// Drop a course (student)
+router.delete('/drop/:id', roleMiddleware(['student']), async (req, res) => {
+  try {
+    const enrollmentId = req.params.id;
+
+    // Only allow dropping own enrollment
+    const result = await pool.query(
+      `DELETE FROM enrollments
+       WHERE id = $1 AND student_id = $2
+       RETURNING *`,
+      [enrollmentId, req.session.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Enrollment not found' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error dropping enrollment:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 // Get enrollments for instructor approval
 router.get('/instructor/pending', roleMiddleware(['instructor']), async (req, res) => {
   try {
@@ -86,25 +111,32 @@ router.put('/instructor/approve/:id', roleMiddleware(['instructor']), async (req
   }
 });
 
-// Get enrollments for advisor approval (only instructor-approved)
+// Get enrollments for advisor approval (only instructor-approved + THEIR students)
+// FIXED: Correct PostgreSQL JOIN syntax
 router.get('/advisor/pending', roleMiddleware(['advisor']), async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT e.*, 
-              u.name as student_name, u.user_id as student_user_id, u.department,
-              c.code as course_code, c.title as course_title
-       FROM enrollments e
-       JOIN users u ON e.student_id = u.id
-       JOIN courses c ON e.course_id = c.id
-       WHERE e.instructor_status = 'approved'
-       ORDER BY e.created_at DESC`
-    );
+    const result = await pool.query(`
+      SELECT e.*, 
+             u.name as student_name, 
+             u.user_id as student_user_id, 
+             u.department,
+             c.code as course_code, 
+             c.title as course_title
+      FROM enrollments e
+      JOIN courses c ON e.course_id = c.id
+      JOIN users u ON e.student_id = u.id
+      JOIN advisor_students aps ON aps.student_id = e.student_id AND aps.advisor_id = $1
+      WHERE e.instructor_status = 'approved'
+      ORDER BY e.created_at DESC
+    `, [req.session.user.id]);
     res.json(result.rows);
   } catch (error) {
-    console.error('Error fetching advisor enrollments:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Advisor enrollments error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
+
+
 
 // Advisor approval/rejection
 router.put('/advisor/approve/:id', roleMiddleware(['advisor']), async (req, res) => {
