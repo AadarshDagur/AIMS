@@ -2,65 +2,111 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { pool } = require('../config/database');
+const nodemailer = require('nodemailer'); // npm install nodemailer
 
-// Login route
+// FIXED: createTransport (not createTransporter)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER, // your@gmail.com
+    pass: process.env.EMAIL_PASS  // your 16-char app password
+  }
+});
+
+// POST /login - Password → Send OTP
 router.post('/login', async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
-    const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1 AND role = $2',
-      [email, role]
-    );
+    const userQuery = `SELECT * FROM users WHERE email = $1 AND role = $2`;
+    const userResult = await pool.query(userQuery, [email, role]);
 
-    if (result.rows.length === 0) {
+    if (userResult.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const user = result.rows[0];
+    const user = userResult.rows[0];
     const isValidPassword = await bcrypt.compare(password, user.password);
-
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    req.session.user = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      user_id: user.user_id,
-      department: user.department
-    };
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    res.json({ 
-      success: true, 
-      role: user.role,
-      redirect: `/${user.role}`
+    await pool.query('DELETE FROM login_otps WHERE user_id = $1', [user.id]);
+    await pool.query(
+      'INSERT INTO login_otps (user_id, otp, expires_at) VALUES ($1, $2, $3)',
+      [user.id, otpHash, expiresAt]
+    );
+
+    // Send email
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'AIMS Login OTP',
+      text: `Your OTP: ${otp} (expires in 10 min)`
     });
+
+    req.session.pendingLogin = { userId: user.id, role: user.role };
+    await req.session.save();
+
+    res.json({ message: 'OTP sent' });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error(error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Logout route
-router.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Logout failed' });
+// POST /verify-otp
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { otp } = req.body;
+
+    if (!req.session.pendingLogin) {
+      return res.status(401).json({ error: 'Session expired' });
     }
-    res.json({ success: true });
-  });
+
+    const { userId } = req.session.pendingLogin;
+    const otpResult = await pool.query(
+      'SELECT * FROM login_otps WHERE user_id = $1 AND used = false AND expires_at > NOW()',
+      [userId]
+    );
+
+    if (otpResult.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid/expired OTP' });
+    }
+
+    const dbOtp = otpResult.rows[0];
+    const isValidOtp = await bcrypt.compare(otp, dbOtp.otp);
+    if (!isValidOtp) {
+      return res.status(401).json({ error: 'Wrong OTP' });
+    }
+
+    await pool.query('UPDATE login_otps SET used = true WHERE id = $1', [dbOtp.id]);
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+
+    req.session.user = userResult.rows[0];
+    req.session.role = req.session.pendingLogin.role;
+    delete req.session.pendingLogin;
+    await req.session.save();
+
+    const rolePath = req.session.role === 'student' ? 'student' : req.session.role;
+    res.json({ message: 'Success', redirect: `/${rolePath}` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
-// Get current user
-router.get('/current-user', (req, res) => {
-  if (req.session.user) {
-    res.json(req.session.user);
-  } else {
-    res.status(401).json({ error: 'Not authenticated' });
-  }
+// POST /logout
+router.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) return res.status(500).json({ error: 'Logout failed' });
+    res.json({ message: 'Logged out' });
+  });
 });
 
 module.exports = router;

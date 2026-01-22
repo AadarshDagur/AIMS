@@ -39,6 +39,12 @@
                     <input type="password" id="password" name="password" placeholder="Enter your password" required>
                 </div>
 
+                <div class="form-group" id="otpGroup" style="display:none;">
+                    <label>OTP</label>
+                    <input type="text" id="otp" name="otp" placeholder="Enter 6-digit OTP">
+                </div>
+
+
                 <div id="errorMessage" class="error-message"></div>
 
                 <button type="submit" class="btn-primary">Login</button>
@@ -56,35 +62,65 @@
     </div>
 
     <script>
+        let otpStep = false;
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const formData = {
+            const errorEl = document.getElementById('errorMessage');
+
+            try {
+            if (!otpStep) {
+                // step 1: password
+                const body = {
                 email: document.getElementById('email').value,
                 password: document.getElementById('password').value,
                 role: document.getElementById('role').value
-            };
+                };
 
-            try {
                 const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
                 });
-
                 const data = await response.json();
 
-                if (response.ok) {
-                    window.location.href = data.redirect;
-                } else {
-                    document.getElementById('errorMessage').textContent = data.error || 'Login failed';
+                if (!response.ok) {
+                errorEl.textContent = data.error || 'Login failed';
+                return;
                 }
-            } catch (error) {
-                document.getElementById('errorMessage').textContent = 'Server error. Please try again.';
+
+                otpStep = true;
+                errorEl.style.color = '#22c55e';
+                errorEl.textContent = 'OTP sent to your email. Enter it below.';
+
+                // show OTP field
+                document.getElementById('otpGroup').style.display = 'block';
+                document.getElementById('password').disabled = true;
+                document.getElementById('role').disabled = true;
+                document.getElementById('email').disabled = true;
+            } else {
+                // step 2: verify OTP
+                const body = { otp: document.getElementById('otp').value.trim() };
+                const response = await fetch('/api/auth/verify-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                errorEl.style.color = '#fecaca';
+                errorEl.textContent = data.error || 'OTP verification failed';
+                return;
+                }
+
+                window.location.href = data.redirect;
+            }
+            } catch (err) {
+            errorEl.textContent = 'Server error. Please try again.';
             }
         });
     </script>
+
 </body>
 </html>

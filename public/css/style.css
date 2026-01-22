@@ -125,6 +125,13 @@ select {
   background-image: none;
 }
 
+/*subtle highlight for OTP step on login page */
+#otpGroup input {
+  letter-spacing: 0.25em;
+  text-align: center;
+}
+
+
 /* Buttons */
 
 button {
@@ -205,6 +212,7 @@ button {
 .demo-list p {
   margin: 0.1rem 0;
 }
+
 
 /* Dashboard layout */
 
