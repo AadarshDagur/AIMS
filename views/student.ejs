@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AIMS - Student Dashboard</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/modern-ui.css">
 </head>
 <body>
     <header class="header">
@@ -22,41 +23,126 @@
             <div class="header-right">
                 <div class="user-info">
                     <p class="user-name"><%= user.name %></p>
-                    <p class="user-role"><%= user.user_id %> (Student)</p>
+                    <p class="user-role"><%= user.user_id %> • Student</p>
                 </div>
-                <button onclick="logout()" class="btn-logout">Logout</button>
+                <button onclick="logout()" class="btn-logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Logout
+                </button>
             </div>
         </div>
     </header>
 
     <main class="main-content">
+        <!-- Statistics Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-card-title">Total Enrollments</div>
+                <div class="stat-card-value" id="totalEnrollments">0</div>
+                <div class="stat-card-change">All time enrollments</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon success">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-card-title">Approved Courses</div>
+                <div class="stat-card-value" id="approvedEnrollments">0</div>
+                <div class="stat-card-change positive">Active courses</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon warning">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-card-title">Pending Approval</div>
+                <div class="stat-card-value" id="pendingEnrollments">0</div>
+                <div class="stat-card-change">Awaiting review</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-card-title">Available Courses</div>
+                <div class="stat-card-value" id="availableCourses">0</div>
+                <div class="stat-card-change">Ready to enroll</div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
         <div class="nav-tabs">
-            <button class="tab-button active" onclick="showTab('courses')">Available Courses</button>
-            <button class="tab-button" onclick="showTab('enrollments')">My Enrollments</button>
+            <button class="tab-button active" onclick="showTab('courses')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                Available Courses
+            </button>
+            <button class="tab-button" onclick="showTab('enrollments')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <polyline points="17 11 19 13 23 9"></polyline>
+                </svg>
+                My Enrollments
+            </button>
         </div>
 
         <!-- Available Courses Tab -->
         <div id="coursesTab" class="tab-content active">
-            <h2>Offered Courses</h2>
+            <h2>Available Courses for Enrollment</h2>
             
             <div class="filter-card">
                 <div class="filter-grid">
                     <div class="form-group">
-                        <label>Offering Department</label>
+                        <label>Department</label>
                         <select id="filterDept">
                             <option value="">All Departments</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Code</label>
-                        <input type="text" id="filterCode" placeholder="Search code...">
+                        <label>Course Code</label>
+                        <input type="text" id="filterCode" placeholder="e.g., CS301">
                     </div>
                     <div class="form-group">
-                        <label>Title</label>
-                        <input type="text" id="filterTitle" placeholder="Search title...">
+                        <label>Course Title</label>
+                        <input type="text" id="filterTitle" placeholder="Search by title...">
                     </div>
                     <div class="form-group">
-                        <button class="btn-primary" onclick="searchCourses()">Search</button>
+                        <button class="btn-primary" onclick="searchCourses()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            Search
+                        </button>
                     </div>
                 </div>
             </div>
@@ -66,8 +152,8 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Code</th>
-                                <th>Title</th>
+                                <th>Course Code</th>
+                                <th>Course Title</th>
                                 <th>Department</th>
                                 <th>Instructor</th>
                                 <th>Credits</th>
@@ -76,7 +162,9 @@
                             </tr>
                         </thead>
                         <tbody id="coursesTable">
-                            <tr><td colspan="7" class="text-center">Loading...</td></tr>
+                            <tr><td colspan="7" class="text-center">
+                                <div class="loading"></div> Loading courses...
+                            </td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -85,21 +173,26 @@
 
         <!-- My Enrollments Tab -->
         <div id="enrollmentsTab" class="tab-content">
-            <h2>My Enrollments</h2>
+            <h2>My Course Enrollments</h2>
 
             <div class="filter-card">
                 <div class="filter-grid">
                     <div class="form-group">
-                    <label>Status</label>
-                    <select id="statusFilter">
-                        <option value="all">All</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
+                        <label>Filter by Status</label>
+                        <select id="statusFilter">
+                            <option value="all">All Enrollments</option>
+                            <option value="pending">Pending Approval</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                    <button class="btn-primary" onclick="applyEnrollmentFilter()">Search</button>
+                        <button class="btn-primary" onclick="applyEnrollmentFilter()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                            </svg>
+                            Apply Filter
+                        </button>
                     </div>
                 </div>
             </div>
@@ -115,11 +208,13 @@
                                 <th>Instructor Status</th>
                                 <th>Advisor Status</th>
                                 <th>Final Status</th>
-                                <th>Action</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="enrollmentsTable">
-                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            <tr><td colspan="7" class="text-center">
+                                <div class="loading"></div> Loading enrollments...
+                            </td></tr>
                         </tbody>
                     </table>
                 </div>

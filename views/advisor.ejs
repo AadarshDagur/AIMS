@@ -5,71 +5,220 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AIMS - Advisor Dashboard</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/modern-ui.css">
 </head>
 <body>
-<header class="header">
-    <div class="header-content">
-        <div class="header-left">
-            <svg class="header-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32"
-                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
-            <div>
-                <h1>AIMS</h1>
-                <p class="subtitle">Academic Information Management System</p>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <svg class="header-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <div>
+                    <h1>AIMS</h1>
+                    <p class="subtitle">Academic Information Management System</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <p class="user-name"><%= user.name %></p>
+                    <p class="user-role"><%= user.user_id %> • Advisor</p>
+                </div>
+                <button onclick="logout()" class="btn-logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Logout
+                </button>
             </div>
         </div>
-        <div class="header-right">
-            <div class="user-info">
-                <p class="user-name"><%= user.name %></p>
-                <p class="user-role"><%= user.user_id %> (Advisor)</p>
+    </header>
+
+    <main class="main-content">
+        <!-- Statistics Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-card-title">Total Students</div>
+                <div class="stat-card-value" id="totalStudents">0</div>
+                <div class="stat-card-change">Under your guidance</div>
             </div>
-            <button onclick="logout()" class="btn-logout">Logout</button>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon warning">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-card-title">Pending Approvals</div>
+                <div class="stat-card-value" id="pendingApprovals">0</div>
+                <div class="stat-card-change">Awaiting your review</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon success">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-card-title">Approved Today</div>
+                <div class="stat-card-value" id="approvedToday">0</div>
+                <div class="stat-card-change positive">Last 24 hours</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-card-title">Total Enrollments</div>
+                <div class="stat-card-value" id="totalEnrollments">0</div>
+                <div class="stat-card-change">All student enrollments</div>
+            </div>
         </div>
-    </div>
-</header>
 
-<main class="main-content">
-    <h2>Pending Enrollment Approvals</h2>
-
-    <!-- Add after <h2>Pending Enrollment Approvals</h2> -->
-    <div class="table-card">
-    <h3>My Assigned Students (12)</h3>
-    <div class="table-container">
-        <table>
-        <thead>
-            <tr><th>Student ID</th><th>Name</th><th>Assigned Date</th></tr>
-        </thead>
-        <tbody id="assignedStudentsTable">
-            <tr><td colspan="3" class="text-center">Loading...</td></tr>
-        </tbody>
-        </table>
-    </div>
-    </div>
-
-
-    <div class="table-card">
-        <div class="table-container">
-            <table>
-                <thead>
-                <tr>
-                    <th>Student Name</th>
-                    <th>Student ID</th>
-                    <th>Department</th>
-                    <th>Course</th>
-                    <th>Advisor Status</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody id="advisorEnrollmentsTable">
-                <tr><td colspan="8" class="text-center">Loading...</td></tr>
-                </tbody>
-            </table>
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="tab-button active" onclick="showTab('students')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                My Students
+            </button>
+            <button class="tab-button" onclick="showTab('approvals')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                Enrollment Approvals
+            </button>
         </div>
-    </div>
-</main>
 
-<script src="/js/advisor.js"></script>
+        <!-- My Students Tab -->
+        <div id="studentsTab" class="tab-content active">
+            <h2>Students Under Your Guidance</h2>
+
+            <div class="filter-card">
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label>Search Student</label>
+                        <input type="text" id="searchStudent" placeholder="Search by name or ID...">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn-primary" onclick="searchStudents()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Student Name</th>
+                                <th>Email</th>
+                                <th>Total Enrollments</th>
+                                <th>Active Courses</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTable">
+                            <tr><td colspan="6" class="text-center">
+                                <div class="loading"></div> Loading students...
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enrollment Approvals Tab -->
+        <div id="approvalsTab" class="tab-content">
+            <h2>Student Enrollment Approvals</h2>
+
+            <div class="filter-card">
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label>Filter by Status</label>
+                        <select id="approvalStatusFilter">
+                            <option value="all">All Requests</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Search Student</label>
+                        <input type="text" id="searchApprovalStudent" placeholder="Search by name or ID...">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn-primary" onclick="applyApprovalFilter()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                            </svg>
+                            Apply Filter
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Student ID</th>
+                                <th>Course Code</th>
+                                <th>Course Title</th>
+                                <th>Instructor Status</th>
+                                <th>Requested On</th>
+                                <th>Your Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="advisorEnrollmentsTable">
+                            <tr><td colspan="8" class="text-center">
+                                <div class="loading"></div> Loading enrollment requests...
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/advisor.js"></script>
 </body>
 </html>
