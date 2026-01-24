@@ -18,7 +18,7 @@ const initDatabase = async () => {
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         name VARCHAR(255) NOT NULL,
-        role VARCHAR(50) NOT NULL CHECK (role IN ('student', 'instructor', 'advisor')),
+        role VARCHAR(50) NOT NULL CHECK (role IN ('student', 'instructor', 'advisor', 'admin')),
         user_id VARCHAR(50) UNIQUE NOT NULL,
         department VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -67,12 +67,12 @@ const initDatabase = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS advisor_students (
         id SERIAL PRIMARY KEY,
-        student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        advisor_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        assigned_date DATE DEFAULT CURRENT_DATE,
+        student_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
+        advisor_id VARCHAR(50) REFERENCES users(user_id) ON DELETE CASCADE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(student_id, advisor_id)
       );
+
     `);
 
     await pool.query(`

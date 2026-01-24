@@ -82,33 +82,98 @@ router.get('/users', requireAdmin, async (req, res) => {
 
 // POST users (uses your existing bcryptjs)
 router.post('/users', requireAdmin, async (req, res) => {
-  const { user_id, name, email, password, role } = req.body;
+  const { user_id, name, email, password, role, advisor_id } = req.body;
+
+  // Validate required fields
+  if (!user_id || !name || !email || !password || !role) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  // If role is student, advisor_id is required
+  if (role === 'student') {
+    if (!advisor_id) {
+      return res.status(400).json({ error: 'Advisor ID is required for students' });
+    }
+
+    // Optional: validate advisor exists
+    try {
+      const advisorCheck = await pool.query(
+        'SELECT 1 FROM users WHERE user_id = $1 AND role = $2',
+        [advisor_id, 'advisor']
+      );
+      if (advisorCheck.rows.length === 0) {
+        return res.status(400).json({ error: 'Invalid or non‑advisor advisor ID' });
+      }
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to validate advisor' });
+    }
+  }
+
   try {
     const bcrypt = require('bcryptjs');
     const hashed = await bcrypt.hash(password || '123456', 10);
+
+    // Insert user
     await pool.query(
       'INSERT INTO users (user_id, name, email, password, role) VALUES ($1,$2,$3,$4,$5)',
       [user_id, name, email, hashed, role]
     );
+
+    // If student, insert into advisor_students
+    if (role === 'student') {
+      await pool.query(
+        `INSERT INTO advisor_students (student_id, advisor_id, created_at)
+         VALUES ($1, $2, NOW())`,
+        [user_id, advisor_id]
+      );
+    }
+
     res.json({ success: true });
   } catch (e) {
+    console.error('Create user error:', e);
     res.status(500).json({ error: e.message });
   }
 });
 
-// 📚 COURSES
+
+// 📚 COURSES - with filters
 router.get('/courses', requireAdmin, async (req, res) => {
+  const { dept, search } = req.query;
+
+  let query = `
+    SELECT c.code, c.title, c.department, c.instructor_id, c.credits, c.session,
+           COALESCE((SELECT COUNT(*) FROM enrollments e WHERE e.course_id::text = c.code), 0) as enrollments
+    FROM courses c
+    WHERE 1=1
+  `;
+
+  const params = [];
+  let paramIndex = 1;
+
+  if (dept && dept !== 'all') {
+    query += ` AND c.department = $${paramIndex}`;
+    params.push(dept);
+    paramIndex++;
+  }
+
+  if (search) {
+    const likeParam = `%${search.toLowerCase()}%`;
+    query += ` AND (LOWER(c.title) LIKE $${paramIndex} OR LOWER(c.code) LIKE $${paramIndex})`;
+    params.push(likeParam);
+    paramIndex++;
+  }
+
+  query += ' ORDER BY c.code';
+
   try {
-    const result = await pool.query(`
-      SELECT c.code, c.title, c.department, c.instructor_id, c.credits, c.session,
-             COALESCE((SELECT COUNT(*) FROM enrollments e WHERE e.course_id::text = c.code), 0) as enrollments
-      FROM courses c ORDER BY c.code
-    `);
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (e) {
+    console.error('Courses error:', e);
     res.json([]);
   }
 });
+
 
 // 📋 DEPARTMENTS
 router.get('/departments', requireAdmin, async (req, res) => {
@@ -120,47 +185,53 @@ router.get('/departments', requireAdmin, async (req, res) => {
   }
 });
 
-// 📋 ENROLLMENTS - Fixed (course_id varchar → code varchar)
+// 📋 ENROLLMENTS - SAFE VERSION (NO JOINS, NO TYPE MISMATCH)
 router.get('/enrollments', requireAdmin, async (req, res) => {
   const { status: filterStatus, search } = req.query;
-  
+
   try {
     let query = `
       SELECT 
-        e.student_id,
-        COALESCE(u.name, e.student_id) as student_name,
-        e.course_id,
-        COALESCE(c.code, e.course_id) as course_code,
-        COALESCE(c.title, 'Course ' || e.course_id) as course_title,
-        COALESCE(e.enrolled_date, e.created_at) as enrolled_date,
-        COALESCE(e.instructor_status, 'pending') as instructor_status,
-        COALESCE(e.advisor_status, 'pending') as advisor_status,
-        COALESCE(e.status, 'pending') as status
-      FROM enrollments e
-      LEFT JOIN users u ON e.student_id = u.user_id
-      LEFT JOIN courses c ON e.course_id::text = c.code
+        student_id,
+        student_id::text AS student_name,        -- placeholder name
+        course_id::text AS course_code,          -- show id as code
+        ('Course ' || course_id::text) AS course_title,
+        COALESCE(enrolled_date::text, created_at::text) AS enrolled_date,
+        COALESCE(instructor_status, 'pending') AS instructor_status,
+        COALESCE(advisor_status, 'pending') AS advisor_status,
+        COALESCE(status, 'pending') AS status
+      FROM enrollments
     `;
-    
+
     const params = [];
+    const conditions = [];
+
+    // Filter by status (all text, so safe)
     if (filterStatus && filterStatus !== 'all') {
-      query += ' WHERE e.status = $1';
+      conditions.push(`status = $${params.length + 1}`);
       params.push(filterStatus);
     }
+
+    // Search on student_id or course_id as text (safe)
     if (search) {
-      const sIdx = params.length + 1;
-      query += params.length ? ' AND' : ' WHERE';
-      query += ` (LOWER(COALESCE(u.name, '')) LIKE $${sIdx} OR LOWER(e.course_id) LIKE $${sIdx})`;
-      params.push(`%${search.toLowerCase()}%`);
+      const idx = params.length + 1;
+      conditions.push(`(student_id::text ILIKE $${idx} OR course_id::text ILIKE $${idx})`);
+      params.push(`%${search}%`);
     }
-    
-    query += ' ORDER BY COALESCE(e.created_at, e.enrolled_date) DESC LIMIT 100';
-    
+
+    if (conditions.length) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    query += ' ORDER BY COALESCE(created_at, enrolled_date) DESC NULLS LAST';
+
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (e) {
-    console.error('Enrollments error:', e);
-    res.json([]);
+    console.error('Enrollments SAFE ERROR:', e.message);
+    res.status(500).json({ error: e.message });
   }
 });
+
 
 module.exports = router;
