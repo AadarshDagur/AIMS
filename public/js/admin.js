@@ -47,11 +47,7 @@ async function loadUsers(filters = {}) {
     const res = await fetch(`/api/admin/users?${params}`);
     const users = await res.json();
     document.getElementById('usersTable').innerHTML = users.map(u => `
-<<<<<<< HEAD
-      <tr><td>${u.user_id}</td><td>${u.name}</td><td>${u.email}</td><td><span class="badge-${u.role}">${u.role}</span></td><td>-</td><td>-</td></tr>
-=======
       <tr><td>${u.user_id}</td><td>${u.name}</td><td>${u.email}</td><td><span class="badge-${u.role}">${u.role}</span></td></tr>
->>>>>>> eaa7e87 (Added smooth filtering across each dashboards)
     `).join('') || '<tr><td colspan="6" class="text-center">No users</td></tr>';
   } catch (e) { console.error('Users failed'); }
 }
@@ -59,20 +55,6 @@ async function loadUsers(filters = {}) {
 async function createUser(e) {
   e.preventDefault();
   const formData = Object.fromEntries(new FormData(e.target));
-<<<<<<< HEAD
-  try {
-    const res = await fetch('/api/admin/users', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
-    });
-    if (res.ok) {
-      document.getElementById('addUserMessage').textContent = '✅ Created!';
-      e.target.reset();
-      loadUsers(); loadStats();
-    }
-  } catch (e) { console.error('Create failed'); }
-}
-
-=======
   const role = formData.role;
   const advisorId = formData.advisor_id;
 
@@ -104,7 +86,6 @@ async function createUser(e) {
 }
 
 
->>>>>>> eaa7e87 (Added smooth filtering across each dashboards)
 function searchUsers() {
   const role = document.getElementById('filterRole').value;
   const search = document.getElementById('searchUser').value;
@@ -117,11 +98,7 @@ async function loadCourses(filters = {}) {
     const res = await fetch(`/api/admin/courses?${params}`);
     const courses = await res.json();
     document.getElementById('coursesTable').innerHTML = courses.map(c => `
-<<<<<<< HEAD
-      <tr><td>${c.code}</td><td>${c.title}</td><td>${c.department||'-'}</td><td>${c.instructor_id||'-'}</td><td>${c.credits}</td><td>${c.session||'-'}</td><td>${c.enrollments}</td><td>-</td></tr>
-=======
       <tr><td>${c.code}</td><td>${c.title}</td><td>${c.department||'-'}</td><td>${c.instructor_id||'-'}</td><td>${c.credits}</td><td>${c.session||'-'}</td><td>${c.enrollments}</td></tr>
->>>>>>> eaa7e87 (Added smooth filtering across each dashboards)
     `).join('') || '<tr><td colspan="8">No courses</td></tr>';
   } catch (e) { console.error('Courses failed'); }
 }

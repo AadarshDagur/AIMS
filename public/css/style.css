@@ -417,130 +417,6 @@ tbody tr:last-child td {
     text-align: center;
 }
 
-<<<<<<< HEAD
-/* Status Badges */
-.status-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    text-transform: capitalize;
-}
-
-.status-pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.status-approved {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.status-rejected {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-/* Messages */
-.message {
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-radius: var(--radius-md);
-    margin: var(--spacing-md) 0;
-    font-size: 0.9375rem;
-    font-weight: 500;
-}
-
-.message-success {
-    background: #d1fae5;
-    color: #065f46;
-    border: 1px solid #6ee7b7;
-}
-
-.message-error {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fca5a5;
-}
-
-.message-info {
-    background: #dbeafe;
-    color: #1e40af;
-    border: 1px solid #93c5fd;
-}
-
-/* Utility Classes */
-.mt-1 { margin-top: var(--spacing-sm); }
-.mt-2 { margin-top: var(--spacing-md); }
-.mt-3 { margin-top: var(--spacing-lg); }
-.mb-1 { margin-bottom: var(--spacing-sm); }
-.mb-2 { margin-bottom: var(--spacing-md); }
-.mb-3 { margin-bottom: var(--spacing-lg); }
-
-.text-sm { font-size: 0.875rem; }
-.text-xs { font-size: 0.75rem; }
-.font-bold { font-weight: 700; }
-.font-semibold { font-weight: 600; }
-
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.gap-2 { gap: var(--spacing-md); }
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .header-content {
-        flex-direction: column;
-        text-align: center;
-        gap: var(--spacing-md);
-    }
-    
-    .header-left {
-        flex-direction: column;
-    }
-    
-    .header-right {
-        flex-direction: column;
-        width: 100%;
-    }
-    
-    .user-info {
-        text-align: center;
-    }
-    
-    .main-content {
-        padding: 0 var(--spacing-md);
-    }
-    
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .filter-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .nav-tabs {
-        gap: 0;
-    }
-    
-    .tab-button {
-        flex: 1;
-        text-align: center;
-    }
-    
-    table {
-        font-size: 0.875rem;
-    }
-    
-    th, td {
-        padding: 0.625rem 0.5rem;
-    }
-}
-
-=======
 .course-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -726,7 +602,6 @@ tbody tr:last-child td {
     }
 }
 
->>>>>>> eaa7e87 (Added smooth filtering across each dashboards)
 @media (max-width: 480px) {
     .header h1 {
         font-size: 1.5rem;
