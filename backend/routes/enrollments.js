@@ -132,15 +132,15 @@ router.post('/instructor/bulk-approve', roleMiddleware(['instructor']), async (r
 // Instructor approval/rejection
 router.put('/instructor/approve/:id', roleMiddleware(['instructor']), async (req, res) => {
   try {
-    const { status, comment } = req.body;
+    const { status } = req.body;
     const enrollmentId = req.params.id;
 
     const result = await pool.query(
       `UPDATE enrollments 
-       SET instructor_status = $1, instructor_comment = $2
-       WHERE id = $3
+       SET instructor_status = $1
+       WHERE id = $2
        RETURNING *`,
-      [status, comment || null, enrollmentId]
+      [status, enrollmentId]
     );
 
     res.json(result.rows[0]);
@@ -202,15 +202,15 @@ router.get('/advisor/pending', roleMiddleware(['advisor']), async (req, res) => 
 // Advisor approval/rejection
 router.put('/advisor/approve/:id', roleMiddleware(['advisor']), async (req, res) => {
   try {
-    const { status, comment } = req.body;
+    const { status } = req.body;
     const enrollmentId = req.params.id;
 
     const result = await pool.query(
       `UPDATE enrollments 
-       SET advisor_status = $1, advisor_comment = $2
-       WHERE id = $3
+       SET advisor_status = $1
+       WHERE id = $2
        RETURNING *`,
-      [status, comment || null, enrollmentId]
+      [status, enrollmentId]
     );
 
     res.json(result.rows[0]);

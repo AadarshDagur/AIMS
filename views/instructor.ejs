@@ -78,7 +78,7 @@
             </svg>
           </div>
         </div>
-        <div class="stat-card-title">Total Enrollments</div>
+        <div class="stat-card-title">Total Requests</div>
         <div class="stat-card-value" id="totalEnrollments">0</div>
         <div class="stat-card-change positive">Across all courses</div>
       </div>
@@ -203,9 +203,11 @@
               </tr>
             </thead>
             <tbody id="instructorEnrollmentsTable">
-              <tr><td colspan="7" class="text-center">
-                <div class="loading"></div> Loading enrollment requests...
-              </td></tr>
+              <tr>
+                <td colspan="7" class="text-center">
+                  <div class="loading"></div> Loading enrollment requests...
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -214,18 +216,23 @@
   </main>
 
   <!-- Modal: Course-specific enrollments -->
-  <div id="courseEnrollmentsModal" class="modal">
+  <div id="courseEnrollmentsModal" style="display: none;">
     <div class="modal-content">
-      <h2 class="modal-title"></h2>
-      <button class="close-btn" onclick="closeModal()">×</button>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalCourseTitle"></h2>
+        <button class="close-btn" onclick="closeModal()">×</button>
+      </div>
 
       <div class="bulk-actions">
-        <button class="btn-small approve" onclick="bulkApprove()">Bulk Approve</button>
-        <button class="btn-small reject" onclick="bulkReject()">Bulk Reject</button>
+        <label>
+          <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)"> Select All
+        </label>
+        <button class="btn-bulk-approve" onclick="bulkUpdate('approved')">Approve Selected</button>
+        <button class="btn-bulk-reject" onclick="bulkUpdate('rejected')">Reject Selected</button>
       </div>
 
       <div class="table-container">
-        <table>
+        <table id="courseEnrollmentsTable">
           <thead>
             <tr>
               <th>Student Name</th>
@@ -236,15 +243,19 @@
               <th>Select</th>
             </tr>
           </thead>
-          <tbody id="courseEnrollmentsTable"></tbody>
+          <tbody>
+            <tr><td colspan="6" class="text-center">Click a course card to load enrollments</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   </div>
+
+
   <script>
     window.currentUser = {
-        id: <%=user.id%>,
-        user_id: "<%= user.user_id %>"
+      id: <%= user.id %>,
+      user_id: "<%= user.user_id %>"
     };
   </script>
 

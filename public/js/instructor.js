@@ -1,3 +1,12 @@
+// =========================
+// Globals
+// =========================
+let myCourses = [];
+let allEnrollments = [];
+
+// =========================
+// Auth
+// =========================
 async function logout() {
   try {
     await fetch('/api/auth/logout', {
@@ -10,6 +19,7 @@ async function logout() {
   }
 }
 
+// =========================
 function showTab(tab) {
   const tabs = ['myCourses', 'approvals'];
   tabs.forEach(t => {
@@ -20,6 +30,52 @@ function showTab(tab) {
   });
 }
 
+// =========================
+// Helpers
+// =========================
+function formatDate(dateStr) {
+  if (!dateStr) return 'N/A';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+
+// ---- Dashboard stats ----
+function updateDashboardStats(courses, enrollments) {
+  const totalCoursesEl = document.getElementById('totalCourses');
+  const pendingRequestsEl = document.getElementById('pendingRequests');
+  const totalEnrollmentsEl = document.getElementById('totalEnrollments');
+  const activeStudentsEl = document.getElementById('activeStudents');
+
+  if (!totalCoursesEl || !pendingRequestsEl || !totalEnrollmentsEl || !activeStudentsEl) {
+    return;
+  }
+
+  // Total Courses = courses taught by this instructor
+  totalCoursesEl.textContent = courses.length;
+
+  // Pending Requests = enrollments where instructor_status === 'pending'
+  const pending = enrollments.filter(e => e.instructor_status === 'pending');
+  pendingRequestsEl.textContent = pending.length;
+
+  // Total Requets = all requests for these courses
+  totalEnrollmentsEl.textContent = enrollments.length;
+
+  // Active Students = distinct student_id where instructor_status === 'approved'
+  const activeStudentIds = new Set(
+    enrollments
+      .filter(e => e.instructor_status === 'approved')
+      .map(e => e.student_id)
+  );
+  activeStudentsEl.textContent = activeStudentIds.size;
+}
+
+// =========================
+// My Courses
+// =========================
 async function loadMyCourses() {
   const container = document.getElementById('instructorCoursesContainer');
   if (!container) {
@@ -41,10 +97,13 @@ async function loadMyCourses() {
       throw new Error('currentUser.id not available');
     }
 
-    const myCourses = courses.filter(c => c.instructor_id === userId);
+    // Save globally
+    myCourses = courses.filter(c => c.instructor_id === userId);
 
     if (!myCourses.length) {
       container.innerHTML = '<p class="text-center">No courses yet</p>';
+      // Update stats with no courses
+      updateDashboardStats(myCourses, allEnrollments);
       return;
     }
 
@@ -59,82 +118,107 @@ async function loadMyCourses() {
         <p><strong>Department:</strong> ${c.department}</p>
         <p><strong>Credits:</strong> ${c.credits}</p>
         <p><strong>Session:</strong> ${c.session}</p>
-        <button class="btn-small" onclick="showCourseEnrollments(${c.id}, '${c.code}', '${c.title}')">
+        <button class="btn-small" onclick="showCourseEnrollments(${c.id}, '${c.code}', '${c.title.replace(/'/g, "\\'")}')">
           View Enrollments
         </button>
       `;
       container.appendChild(card);
     });
+
+    // Update stats after courses load
+    updateDashboardStats(myCourses, allEnrollments);
   } catch (e) {
     console.error('Load my courses error:', e);
     container.innerHTML = '<p class="text-center">Failed to load courses</p>';
   }
 }
 
+// =========================
+// Enrollment Requests (main table)
+// =========================
 
-function formatDate(dateStr) {
-  if (!dateStr) return 'N/A';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-IN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
-
+// loadInstructorEnrollments with global allEnrollments + client filter
 async function loadInstructorEnrollments() {
   const tbody = document.getElementById('instructorEnrollmentsTable');
   tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
   try {
-    const res = await fetch('/api/enrollments/instructor/pending');
+    // Backend should return all statuses for this instructor
+    const res = await fetch('/api/enrollments/instructor/pending?status=all');
     const rows = await res.json();
-    if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center">No requests</td></tr>';
-      return;
-    }
-    tbody.innerHTML = '';
-    rows.forEach(e => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${e.student_name}</td>
-        <td>${e.student_user_id}</td>
-        <td>${e.course_code} - ${e.course_title}</td>
-        <td>${formatDate(e.enrolled_date)}</td>
-        <td><span class="badge badge-${e.instructor_status}">${e.instructor_status}</span></td>
-        <td>
-          <button class="btn-small approve" onclick="updateEnrollment(${e.id}, 'approved')">Approve</button>
-          <button class="btn-small reject" onclick="updateEnrollment(${e.id}, 'rejected')">Reject</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
+
+    allEnrollments = Array.isArray(rows) ? rows : [];
+
+    renderEnrollmentsTable(allEnrollments);
+
+    // Update stats after enrollments load
+    updateDashboardStats(myCourses, allEnrollments);
   } catch (e) {
+    console.error('loadInstructorEnrollments error:', e);
     tbody.innerHTML = '<tr><td colspan="7" class="text-center">Failed to load</td></tr>';
   }
 }
 
+function applyApprovalFilter() {
+  const filter = document.getElementById('approvalStatusFilter').value;
+  let filtered;
+
+  if (filter === 'all') {
+    filtered = allEnrollments;
+  } else {
+    filtered = allEnrollments.filter(e => e.instructor_status === filter);
+  }
+
+  renderEnrollmentsTable(filtered);
+}
+
+function renderEnrollmentsTable(rows) {
+  const tbody = document.getElementById('instructorEnrollmentsTable');
+  if (!rows || !rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No requests</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '';
+  rows.forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${e.student_name}</td>
+      <td>${e.student_user_id}</td>
+      <td>${e.course_code}</td>
+      <td>${e.course_title}</td>
+      <td>${formatDate(e.enrolled_date)}</td>
+      <td><span class="badge badge-${e.instructor_status}">${e.instructor_status}</span></td>
+      <td>
+        <button class="btn-small approve" onclick="updateEnrollment(${e.id}, 'approved')">Approve</button>
+        <button class="btn-small reject" onclick="updateEnrollment(${e.id}, 'rejected')">Reject</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
 async function updateEnrollment(id, status) {
-  const input = document.querySelector(`input[data-comment-for="${id}"]`);
-  const comment = input ? input.value.trim() : '';
   try {
     const res = await fetch(`/api/enrollments/instructor/approve/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, comment })
+      body: JSON.stringify({ status })
     });
     if (!res.ok) {
       const data = await res.json();
       alert(data.error || 'Update failed');
       return;
     }
-    loadInstructorEnrollments();
+    await loadInstructorEnrollments();
   } catch (e) {
+    console.error('updateEnrollment error:', e);
     alert('Server error');
   }
 }
 
+// =========================
+// Course-specific modal
+// =========================
 async function showCourseEnrollments(courseId, courseCode, courseTitle) {
   const modal = document.getElementById('courseEnrollmentsModal');
   if (!modal) {
@@ -142,27 +226,38 @@ async function showCourseEnrollments(courseId, courseCode, courseTitle) {
     return;
   }
 
-  modal.style.display = 'block';
-  modal.querySelector('.modal-title').textContent = `${courseCode} – ${courseTitle}`;
+  modal.style.display = 'flex';
 
-  const tbody = modal.querySelector('#courseEnrollmentsTable');
-  tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
+  const titleEl = document.getElementById('modalCourseTitle');
+  if (titleEl) {
+    titleEl.textContent = `${courseCode} – ${courseTitle}`;
+  }
+
+  const tbody = modal.querySelector('#courseEnrollmentsTable tbody') ||
+                modal.querySelector('#courseEnrollmentsTable');
+  if (!tbody) {
+    console.error('#courseEnrollmentsTable body not found');
+    return;
+  }
+
+  tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
 
   try {
-    const res = await fetch(`/api/enrollments/instructor/pending?course_id=${courseId}`);
+    const res = await fetch(`/api/enrollments/instructor/pending?course_id=${courseId}&status=all`);
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
     const rows = await res.json();
 
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center">No enrollments</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center">No enrollments</td></tr>';
       return;
     }
 
     tbody.innerHTML = '';
     rows.forEach(e => {
       const tr = document.createElement('tr');
+      tr.dataset.id = e.id;
       tr.innerHTML = `
         <td>${e.student_name}</td>
         <td>${e.student_user_id}</td>
@@ -171,15 +266,21 @@ async function showCourseEnrollments(courseId, courseCode, courseTitle) {
         <td><span class="badge badge-${e.instructor_status}">${e.instructor_status}</span></td>
         <td>
           <label>
-            <input type="checkbox" name="enrollment" value="${e.id}">
+            <input type="checkbox" class="enrollment-checkbox" value="${e.id}">
           </label>
         </td>
       `;
       tbody.appendChild(tr);
     });
+
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+      selectAll.checked = false;
+      selectAll.onchange = () => toggleSelectAll();
+    }
   } catch (e) {
     console.error('Load course enrollments error:', e);
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Failed to load</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Failed to load</td></tr>';
   }
 }
 
@@ -188,64 +289,63 @@ function closeModal() {
   if (modal) modal.style.display = 'none';
 }
 
-async function bulkApprove() {
-  const checked = document.querySelectorAll('input[name="enrollment"]:checked');
-  const ids = Array.from(checked).map(input => Number(input.value));
+function toggleSelectAll() {
+  const selectAll = document.getElementById('selectAll');
+  const checkboxes = document.querySelectorAll('.enrollment-checkbox');
+  const checked = !!selectAll && selectAll.checked;
+  checkboxes.forEach(cb => cb.checked = checked);
+}
+
+async function bulkUpdate(status) {
+  const checkboxes = document.querySelectorAll('.enrollment-checkbox:checked');
+  const ids = Array.from(checkboxes).map(cb => Number(cb.value));
   if (!ids.length) return;
 
   try {
     const res = await fetch('/api/enrollments/instructor/bulk-approve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids, status: 'approved' })
+      body: JSON.stringify({ ids, status })
     });
 
     if (!res.ok) {
       const data = await res.json();
-      alert(data.error || 'Bulk approve failed');
+      alert(data.error || 'Bulk update failed');
       return;
     }
 
-    loadInstructorEnrollments();
-    checked.forEach(input => input.closest('tr').remove());
-  } catch (e) {
-    alert('Server error');
-  }
-}
+    const result = await res.json();
+    console.log('Updated:', result.updated);
 
-async function bulkReject() {
-  const checked = document.querySelectorAll('input[name="enrollment"]:checked');
-  const ids = Array.from(checked).map(input => Number(input.value));
-  if (!ids.length) return;
-
-  try {
-    const res = await fetch('/api/enrollments/instructor/bulk-approve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids, status: 'rejected' })
+    checkboxes.forEach(cb => {
+      const row = cb.closest('tr');
+      const badge = row.querySelector('.badge');
+      badge.textContent = status;
+      badge.className = `badge badge-${status}`;
+      cb.disabled = true;
     });
 
-    if (!res.ok) {
-      const data = await res.json();
-      alert(data.error || 'Bulk reject failed');
-      return;
-    }
-
-    loadInstructorEnrollments();
-    checked.forEach(input => input.closest('tr').remove());
+    await loadInstructorEnrollments();
   } catch (e) {
+    console.error('bulkUpdate error:', e);
     alert('Server error');
   }
 }
 
+// =========================
+// Create course form
+// =========================
 document.addEventListener('DOMContentLoaded', () => {
   loadMyCourses();
   loadInstructorEnrollments();
 
-  document.getElementById('createCourseForm').addEventListener('submit', async e => {
+  const form = document.getElementById('createCourseForm');
+  if (!form) return;
+
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     const messageEl = document.getElementById('createCourseMessage');
-    messageEl.textContent = 'Saving...';
+    if (messageEl) messageEl.textContent = 'Saving...';
 
     const body = {
       code: document.getElementById('courseCode').value.trim(),
@@ -263,14 +363,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (!res.ok) {
-        messageEl.textContent = data.error || 'Failed to create course';
+        if (messageEl) messageEl.textContent = data.error || 'Failed to create course';
         return;
       }
-      messageEl.textContent = 'Course created successfully';
-      e.target.reset();
-      loadMyCourses();
+      if (messageEl) messageEl.textContent = 'Course created successfully';
+      form.reset();
+      await loadMyCourses();
     } catch (err) {
-      messageEl.textContent = 'Server error';
+      console.error('Create course error:', err);
+      if (messageEl) messageEl.textContent = 'Server error';
     }
   });
 });

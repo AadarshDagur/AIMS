@@ -1,3 +1,8 @@
+// ========= Globals =========
+let allStudentEnrollments = [];
+let availableCoursesCount = 0;
+
+// ========= Auth =========
 async function logout() {
   try {
     await fetch('/api/auth/logout', {
@@ -10,6 +15,7 @@ async function logout() {
   }
 }
 
+// ========= Tabs =========
 function showTab(tab) {
   const tabs = ['courses', 'enrollments'];
   tabs.forEach(t => {
@@ -20,6 +26,7 @@ function showTab(tab) {
   });
 }
 
+// ========= Helpers =========
 async function loadDepartments() {
   const res = await fetch('/api/courses/departments');
   const departments = await res.json();
@@ -46,11 +53,62 @@ async function fetchCourses() {
   return res.json();
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return 'N/A';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+// ========= Stats =========
+function updateStudentStats() {
+  const totalEnrollmentsEl = document.getElementById('totalEnrollments');
+  const approvedEnrollmentsEl = document.getElementById('approvedEnrollments');
+  const pendingEnrollmentsEl = document.getElementById('pendingEnrollments');
+  const availableCoursesEl = document.getElementById('availableCourses');
+
+  if (!totalEnrollmentsEl || !approvedEnrollmentsEl || !pendingEnrollmentsEl || !availableCoursesEl) {
+    return;
+  }
+
+  // Total enrollments
+  totalEnrollmentsEl.textContent = allStudentEnrollments.length;
+
+  const withFinal = allStudentEnrollments.map(e => {
+    const finalStatus =
+      e.instructor_status === 'approved' && e.advisor_status === 'approved'
+        ? 'approved'
+        : e.instructor_status === 'rejected' || e.advisor_status === 'rejected'
+        ? 'rejected'
+        : 'pending';
+    return { ...e, finalStatus };
+  });
+
+  const approved = withFinal.filter(e => e.finalStatus === 'approved');
+  const pending = withFinal.filter(e => e.finalStatus === 'pending');
+
+  approvedEnrollmentsEl.textContent = approved.length;
+  pendingEnrollmentsEl.textContent = pending.length;
+
+  // Available courses (from last fetch)
+  availableCoursesEl.textContent = availableCoursesCount;
+}
+
+// ========= Courses (Available) =========
 async function renderCourses() {
   const tbody = document.getElementById('coursesTable');
   tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
   try {
     const courses = await fetchCourses();
+
+    availableCoursesCount = Array.isArray(courses) ? courses.length : 0;
+    updateStudentStats();
+
     if (!courses.length) {
       tbody.innerHTML = '<tr><td colspan="7" class="text-center">No courses found</td></tr>';
       return;
@@ -94,21 +152,10 @@ async function enroll(courseId) {
   }
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return 'N/A';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-IN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
-
-// --- NEW: client-side status filter helper ---
+// ========= Enrollments (My Enrollments) =========
+// status filter helper
 function passesStatusFilter(enrollment) {
-  const select = document.getElementById('statusFilter'); // <select> in My Enrollments
+  const select = document.getElementById('statusFilter');
   if (!select) return true;
   const filter = select.value; // 'all' | 'pending' | 'approved' | 'rejected'
 
@@ -123,7 +170,7 @@ function passesStatusFilter(enrollment) {
   return finalStatus === filter;
 }
 
-// --- NEW: drop course ---
+// drop course
 async function dropEnrollment(enrollmentId) {
   if (!confirm('Are you sure you want to drop this course?')) return;
   try {
@@ -148,6 +195,10 @@ async function loadEnrollments() {
   try {
     const res = await fetch('/api/enrollments/student');
     const rows = await res.json();
+
+    allStudentEnrollments = Array.isArray(rows) ? rows : [];
+    updateStudentStats();
+
     if (!rows.length) {
       tbody.innerHTML = '<tr><td colspan="7" class="text-center">No enrollments yet</td></tr>';
       return;
@@ -155,7 +206,7 @@ async function loadEnrollments() {
 
     tbody.innerHTML = '';
     rows
-      .filter(passesStatusFilter)   // apply status filter
+      .filter(passesStatusFilter)
       .forEach(e => {
         const finalStatus =
           e.instructor_status === 'approved' && e.advisor_status === 'approved'
@@ -171,7 +222,7 @@ async function loadEnrollments() {
             ? 'badge-rejected'
             : 'badge-pending';
 
-        const canDrop = finalStatus !== 'rejected'; // or whatever rule you want
+        const canDrop = finalStatus !== 'rejected';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -196,15 +247,16 @@ async function loadEnrollments() {
   }
 }
 
+// ========= Filters =========
 function searchCourses() {
   renderCourses();
 }
 
-// called by Status dropdown “Search” button
 function applyEnrollmentFilter() {
   loadEnrollments();
 }
 
+// ========= Initial load =========
 document.addEventListener('DOMContentLoaded', () => {
   loadDepartments();
   renderCourses();
