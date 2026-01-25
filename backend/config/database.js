@@ -89,6 +89,19 @@ const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_advisor_students_advisor ON advisor_students(advisor_id);
     `);
 
+    await pool.query(`
+      CREATE TABLE public.session (
+    sid     VARCHAR NOT NULL,
+    sess    JSON NOT NULL,
+    expire  TIMESTAMP(6) WITHOUT TIME ZONE NOT NULL,
+    CONSTRAINT session_pkey PRIMARY KEY (sid)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_session_expire ON public.session(expire);
+    `);
+
+
+
 
     console.log('Database tables created successfully');
   } catch (error) {
