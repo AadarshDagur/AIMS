@@ -151,8 +151,16 @@
                         <input type="text" id="userName" name="name" required placeholder="Full name">
                     </div>
                     <div class="form-group">
-                        <label>Email *</label>
-                        <input type="email" id="userEmail" name="email" required placeholder="email@example.com">
+                      <label for="userEmail">Email *</label>
+                      <input type="email" 
+                            id="userEmail" 
+                            name="email" 
+                            required 
+                            placeholder="username@iitrpr.ac.in"
+                            pattern="^[a-zA-Z0-9._%+-]+@iitrpr\.ac\.in$"
+                            title="Please use a valid @iitrpr.ac.in email address."
+                            maxlength="100">
+                      <div id="emailError" class="error-message" style="display: none;">Email must end with @iitrpr.ac.in</div>
                     </div>
                     <div class="form-group">
                         <label>Password *</label>

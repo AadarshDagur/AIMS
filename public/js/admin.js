@@ -52,6 +52,32 @@ async function loadUsers(filters = {}) {
   } catch (e) { console.error('Users failed'); }
 }
 
+document.getElementById('userEmail').addEventListener('input', function(e) {
+  const email = e.target.value.toLowerCase().trim();
+  const errorDiv = document.getElementById('emailError');
+  const allowedDomain = '@iitrpr.ac.in';
+  
+  if (email.endsWith(allowedDomain)) {
+    e.target.setCustomValidity(''); // Clear any error
+    errorDiv.style.display = 'none';
+  } else if (email.includes('@')) {
+    e.target.setCustomValidity('Email must be @iitrpr.ac.in');
+    errorDiv.style.display = 'block';
+  } else {
+    errorDiv.style.display = 'none';
+  }
+});
+
+// Form submit validation (backup)
+document.querySelector('form').addEventListener('submit', function(e) {
+  const emailInput = document.getElementById('userEmail');
+  if (!emailInput.value.toLowerCase().endsWith('@iitrpr.ac.in')) {
+    e.preventDefault();
+    document.getElementById('emailError').style.display = 'block';
+  }
+});
+
+
 async function createUser(e) {
   e.preventDefault();
   const formData = Object.fromEntries(new FormData(e.target));

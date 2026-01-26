@@ -172,10 +172,33 @@ select:focus {
 
 /* Responsive - Mobile fix */
 @media (max-width: 480px) {
-  .login-container {
-    padding: 1rem;
+  body.login-page {
+    padding: 1rem; /* Add body padding to prevent edge squeezing */
   }
+  
+  .login-container {
+    padding: 1.25rem; /* Increased from 1rem */
+    max-width: 95%; /* Use more screen width */
+  }
+  
   .login-box {
-    padding: 1.8rem 1.5rem;
+    padding: 2.25rem 1.75rem; /* Larger internal padding: was 1.8/1.5 */
+  }
+  
+  input, select {
+    padding: 1rem 1rem; /* Boosted from 0.6/0.75rem for 44px+ touch targets */
+    font-size: 1rem; /* Larger text */
+    min-height: 48px; /* Ensures WCAG-compliant height */
+  }
+  
+  .btn-primary {
+    padding: 1rem 1.25rem;
+    font-size: 1.05rem;
+    min-height: 52px; /* Comfortable thumb tap size */
+  }
+  
+  .login-header h1 {
+    font-size: 1.65rem; /* Slight boost */
   }
 }
+
