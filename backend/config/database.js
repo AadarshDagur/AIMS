@@ -66,9 +66,8 @@ const initDatabase = async () => {
         course_id INTEGER REFERENCES courses(id),
         instructor_status VARCHAR(50) DEFAULT 'pending' CHECK (instructor_status IN ('pending', 'approved', 'rejected')),
         advisor_status VARCHAR(50) DEFAULT 'pending' CHECK (advisor_status IN ('pending', 'approved', 'rejected')),
+        status VARCHAR(20) DEFAULT 'pending' CHECK (advisor_status IN ('pending', 'approved', 'rejected')),
         enrolled_date DATE DEFAULT CURRENT_DATE,
-        instructor_comment TEXT,
-        advisor_comment TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(student_id, course_id)
       );
