@@ -90,7 +90,7 @@ const initDatabase = async () => {
     `);
 
     await pool.query(`
-      CREATE TABLE public.session (
+      CREATE TABLE IF NOT EXISTS public.session (
     sid     VARCHAR NOT NULL,
     sess    JSON NOT NULL,
     expire  TIMESTAMP(6) WITHOUT TIME ZONE NOT NULL,
